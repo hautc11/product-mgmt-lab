@@ -9,3 +9,4 @@ faker
 pytest
 httpx
 fakeredis
+python-dotenv
