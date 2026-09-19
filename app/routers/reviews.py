@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.cache import cache_delete, get_cached_key
 from app.database import get_db
 from app.models import Product, Review
 from app.schemas.review import ReviewCreate, ReviewOut
@@ -27,6 +28,7 @@ def create_review(product_id: int, review: ReviewCreate, db: Session = Depends(g
     db.add(new_review)
     db.commit()
     db.refresh(new_review)
+    cache_delete(get_cached_key(product_id))  # Invalidate cache for the product
     return new_review
 
 @router.get("", response_model=list[ReviewOut])
