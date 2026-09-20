@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.cache import cache_delete, cache_get, cache_set, get_cached_key
 from app.database import get_db
+from app.errors import ProductNameConflictError, ProductNotFoundError
 from app.models.product import Product
 from app.models.review import Review
 from app.schemas.product import ProductUpdate
@@ -74,7 +76,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
     product = db.get(Product, product_id)
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise ProductNotFoundError(product_id)
 
     avg_rating, review_count = (
         db.query(
@@ -101,13 +103,19 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 def update_product(product_id: int, payload: ProductUpdate, db: Session = Depends(get_db)):
     product = db.get(Product, product_id)
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise ProductNotFoundError(product_id)
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
 
     db.add(product)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ProductNameConflictError(payload.name)
+    
     db.refresh(product)
 
     # Invalidate cache for the updated product

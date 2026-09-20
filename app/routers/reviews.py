@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.cache import cache_delete, get_cached_key
 from app.database import get_db
+from app.errors import ProductNotFoundError
 from app.models import Product, Review
 from app.schemas.review import ReviewCreate, ReviewOut
 
@@ -16,7 +17,7 @@ def create_review(product_id: int, review: ReviewCreate, db: Session = Depends(g
     product = db.get(Product, product_id)
 
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise ProductNotFoundError(product_id)
 
     new_review = Review(
         product_id=product_id, 
