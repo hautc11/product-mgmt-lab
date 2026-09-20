@@ -42,7 +42,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
         status_code=422,
         content={
             "error": {
-                "code": HTTPStatus.UNPROCESSABLE_ENTITY.name,
+                "code": "UNPROCESSABLE_ENTITY",
                 "message": "Invalid request data",
                 "details": exc.errors(),
             }
