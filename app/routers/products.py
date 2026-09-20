@@ -15,6 +15,55 @@ router = APIRouter(
     tags=["products"],
 )
 
+@router.get("")
+def list_products_offset(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
+    total = db.query(func.count(Product.id)).scalar()
+    products = (
+        db.query(Product)
+        .order_by(Product.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return {
+        "items": [
+            {
+                "id": p.id,
+                "name": p.name,
+                "price": float(p.price),
+                "description": p.description,
+            }
+            for p in products
+        ],
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+    }
+
+@router.get("/cursor")
+def list_products_cursor(cursor: int | None = None, limit: int = 20, db: Session = Depends(get_db)):
+    query = db.query(Product).order_by(Product.id.asc())
+    if cursor is not None:
+        query = query.filter(Product.id > cursor)
+
+    products = query.limit(limit + 1).all()
+    has_more = len(products) > limit
+    products = products[:limit]
+
+    return {
+        "items": [
+            {
+                "id": p.id,
+                "name": p.name,
+                "price": float(p.price),
+                "description": p.description,
+            }
+            for p in products
+        ],
+        "next_cursor": products[-1].id if has_more else None,
+        "has_more": has_more
+    }
+
 @router.get("/{product_id}")
 def get_product(product_id: int, db: Session = Depends(get_db)):
     key = get_cached_key(product_id)
