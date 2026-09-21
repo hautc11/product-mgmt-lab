@@ -21,7 +21,8 @@ async def app_error_handler(request: Request, exec: AppError):
                 "code": exec.code, 
                 "message": exec.message
             }
-        }
+        },
+        headers=exec.headers,
     )
 
 @app.exception_handler(StarletteHTTPException)
