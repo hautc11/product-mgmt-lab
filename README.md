@@ -1,6 +1,6 @@
 # Product Management Lab
 
-A application for managing products and product reviews. The
+An application for managing products and product reviews. The
 application uses PostgreSQL for persistence, SQLAlchemy for database access,
 Redis for product response caching, and Alembic for schema migrations.
 
@@ -14,11 +14,36 @@ Redis for product response caching, and Alembic for schema migrations.
 - `Dockerfile` - image definition for the FastAPI application.
 - `compose.yaml` - app, PostgreSQL, and Redis services.
 - `docs/product-reviews-table-design.md` - review table requirements and ER diagram.
+- `pyproject.toml` and `uv.lock` - project metadata and locked dependencies.
 
 ## Requirements
 
 - Docker Desktop with Docker Compose
-- Python 3.10+ (optional, for running the app outside Docker)
+- Python 3.14+
+- `uv` (for local dependency management and commands outside Docker)
+
+## Local development
+
+Install the locked dependencies, including the development dependency group:
+
+```powershell
+uv sync --locked
+```
+
+Run the application locally:
+
+```powershell
+uv run uvicorn app.main:app --reload
+```
+
+Run the test suite:
+
+```powershell
+uv run python -m pytest
+```
+
+The committed `uv.lock` file keeps dependency versions reproducible. Update
+dependencies with `uv add` or `uv remove`, then review the resulting lockfile.
 
 ## Docker setup
 
@@ -37,13 +62,13 @@ docker compose up -d --build
 Apply the database migrations inside the application container:
 
 ```powershell
-docker compose exec app alembic upgrade head
+docker compose exec app uv run alembic upgrade head
 ```
 
 Optional: add sample users and products from inside the application container:
 
 ```powershell
-docker compose exec app python -m app.seed
+docker compose exec app uv run python -m app.seed
 ```
 
 The API is available at <http://localhost:8000>. Interactive API
