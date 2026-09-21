@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.cache import cache_delete, get_cached_key
 from app.database import get_db
 from app.errors import ProductNotFoundError
 from app.models import Product, Review
+from app.rate_limit import rate_limiter
 from app.schemas.review import ReviewCreate, ReviewOut
 
 router = APIRouter(
@@ -12,7 +13,7 @@ router = APIRouter(
     tags=["reviews"],
 )
 
-@router.post("", response_model=ReviewOut, status_code=201)
+@router.post("", response_model=ReviewOut, status_code=201, dependencies=[Depends(rate_limiter(max_requests=5, window_seconds=60))])
 def create_review(product_id: int, review: ReviewCreate, db: Session = Depends(get_db)):
     product = db.get(Product, product_id)
 

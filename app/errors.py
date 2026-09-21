@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 class AppError(Exception):
     status_code = 500
+    headers: dict | None = None
 
     def __init__(self, message: str, code: str | None = None):
         self.message = message
@@ -14,6 +15,13 @@ class NotFoundError(AppError):
 
 class ConflictError(AppError):
     status_code = 409
+
+class RateLimitExceededError(AppError):
+    status_code = 429
+
+    def __init__(self, retry_after: int):
+        self.headers = {"Retry-After": str(retry_after)}
+        super().__init__("Rate limit exceeded, please try again later", code="RATE_LIMIT_EXCEEDED")
 
 class ProductNotFoundError(NotFoundError):
     def __init__(self, product_id: int):
